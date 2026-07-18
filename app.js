@@ -229,7 +229,6 @@ const els = {
   body: document.body,
   hud: $("#hud"),
   streakCount: $("#streakCount"),
-  goalArc: $("#goalArc"),
   goalText: $("#goalText"),
   hudGoal: $("#hudGoal"),
   heartCount: $("#heartCount"),
@@ -237,11 +236,12 @@ const els = {
   openSettings: $("#openSettings"),
   home: $("#home"),
   chapterTabs: $("#chapterTabs"),
-  heroCrest: $("#heroCrest"),
   heroNumber: $("#heroNumber"),
   heroTitle: $("#heroTitle"),
+  heroLearned: $("#heroLearned"),
+  heroTotal: $("#heroTotal"),
+  heroTrack: $("#heroTrack"),
   heroSummary: $("#heroSummary"),
-  heroCrownCount: $("#heroCrownCount"),
   path: $("#path"),
   session: $("#session"),
   quitSession: $("#quitSession"),
@@ -288,6 +288,14 @@ function normalize(v) {
   return String(v).toLowerCase()
     .replace(/[.,;:!?()"'„“”]/g, "")
     .replace(/\s+/g, " ").trim();
+}
+function genderOf(term) {
+  const m = String(term).trim().match(/^(der|die|das)\s/i);
+  return m ? m[1].toLowerCase() : "";
+}
+function splitArticle(term) {
+  const g = genderOf(term);
+  return g ? { art: term.slice(0, g.length), rest: term.slice(g.length).trim() } : { art: "", rest: term };
 }
 function stripArticle(term) {
   return term.replace(/^(der|die|das|eine|einen|einem|einer|ein)\s+/i, "").trim();
@@ -477,6 +485,14 @@ function sndFanfare() { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(
 /* ============================================================
    View switching
    ============================================================ */
+// pendulum: retrigger a keyframe animation on an element
+function swing(el, cls) {
+  if (!el) return;
+  el.classList.remove("a-push", "a-pop", "a-swap");
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+
 function setView(view) {
   if (view !== "session" && session) session = null;
   els.body.dataset.view = view;
@@ -488,6 +504,9 @@ function setView(view) {
   els.bottomNav.querySelectorAll(".nav-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.nav === (view === "bank" ? "bank" : "home"));
   });
+  if (view === "session") swing(els.stage, "a-push");
+  else if (view === "home") swing(els.home, "a-pop");
+  else if (view === "bank") swing(els.bank, "a-push");
   window.scrollTo(0, 0);
 }
 
@@ -497,12 +516,8 @@ function setView(view) {
 function updateHud() {
   ensureDaily();
   els.streakCount.textContent = state.streak.count;
-  const pct = Math.max(0, Math.min(1, state.goal ? state.daily.xp / state.goal : 1));
-  const circ = 2 * Math.PI * 15.5;
-  els.goalArc.style.strokeDashoffset = String(circ * (1 - pct));
-  els.goalText.textContent = `${state.daily.xp}/${state.goal}`;
-  els.heartCount.textContent = state.heartsMode ? "5" : "∞";
-  els.hudHearts.classList.toggle("spent", !state.heartsMode);
+  els.goalText.innerHTML = `${state.daily.xp}<small>/${state.goal}</small>`;
+  els.heartCount.textContent = state.heartsMode ? "5" : "None";
 }
 
 function renderChapterTabs() {
@@ -511,7 +526,7 @@ function renderChapterTabs() {
     const btn = document.createElement("button");
     btn.className = "chapter-tab" + (c.id === currentChapter ? " active" : "");
     btn.type = "button";
-    btn.innerHTML = `<small>Kap.</small><b>${c.number}</b>`;
+    btn.innerHTML = `<small>Batch</small><b>${c.number}</b>`;
     btn.addEventListener("click", () => { currentChapter = c.id; renderHome(); });
     els.chapterTabs.appendChild(btn);
   });
@@ -521,73 +536,65 @@ function renderHome() {
   renderChapterTabs();
   const c = chapterMeta();
   const cls = chapterLessons();
-  els.heroCrest.textContent = c.number;
   els.heroNumber.textContent = c.number;
   els.heroTitle.textContent = c.title;
   els.heroSummary.textContent = c.subtitle;
-  const crownTotal = cls.reduce((sum, l) => sum + lessonState(l.id).crown, 0);
-  els.heroCrownCount.textContent = crownTotal;
+
+  const all = chapterWords();
+  const learnedAll = all.filter(isLearned).length;
+  els.heroLearned.textContent = learnedAll;
+  els.heroTotal.textContent = all.length;
+  els.heroTrack.style.width = all.length ? `${Math.round((learnedAll / all.length) * 100)}%` : "0";
 
   els.path.innerHTML = "";
   const firstUnfinished = cls.findIndex((l) => lessonState(l.id).crown < 5);
   let lastGroup = null;
+  let groupEl = null;
+
   cls.forEach((lesson, i) => {
-    // a lesson holds several sub-lessons, print its heading when the group changes
+    // a lesson holds several sub-lessons, open a new block when the group changes
     if (lesson.group && lesson.group !== lastGroup) {
       lastGroup = lesson.group;
       const groupWords = vocab.filter((v) => {
         const l = lessons.find((x) => x.id === v.lesson);
         return l && l.group === lesson.group;
       });
-      const groupDone = groupWords.filter(isLearned).length;
       const head = document.createElement("div");
       head.className = "lesson-head";
       head.innerHTML = `<span class="lh-title">${escapeHtml(lesson.groupTitle || "")}</span>
-        <span class="lh-count">${groupDone}/${groupWords.length}</span>`;
+        <span class="lh-count">${groupWords.filter(isLearned).length} / ${groupWords.length}</span>`;
       els.path.appendChild(head);
+      groupEl = document.createElement("div");
+      groupEl.className = "lesson-group";
+      els.path.appendChild(groupEl);
     }
+
     const words = lessonWords(lesson.id);
     const ls = lessonState(lesson.id);
     const learned = words.filter(isLearned).length;
-    const learnedPct = words.length ? Math.round((learned / words.length) * 100) : 0;
     const done = ls.crown >= 5;
     const started = ls.crown > 0 || learned > 0;
-    const isCurrent = i === firstUnfinished;
 
-    const row = document.createElement("div");
-    row.className = "path-row" + (isCurrent ? " current" : "");
-    row.style.transform = `translateX(${Math.round(Math.sin(i * 0.9) * 62)}px)`;
-
-    const bubble = isCurrent
-      ? `<div class="start-bubble">${started ? "Continue" : "Start"}</div>` : "";
-    const crownBadge = ls.crown > 0
-      ? `<span class="node-crown"><span>👑</span>${ls.crown}</span>` : "";
-
-    row.innerHTML = `
-      ${bubble}
-      <button class="node ${done ? "done" : started ? "started" : ""}" type="button" aria-label="${escapeAttr(lesson.title)}">
-        <span class="node-ring" style="--p:${done ? 100 : learnedPct}"></span>
-        <span class="node-face">${lesson.icon || "•"}</span>
-        ${crownBadge}
-      </button>
-      <div class="node-label">${escapeHtml(lesson.title)}</div>
-      <div class="node-sub">${done ? "Mastered · " : ""}${learned}/${words.length} words</div>`;
-    row.querySelector(".node").addEventListener("click", () => startLessonSession(lesson.id));
-    els.path.appendChild(row);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "node" + (done ? " done" : started ? "" : (i === firstUnfinished ? "" : " locked"));
+    if (i === firstUnfinished) btn.classList.add("current");
+    btn.setAttribute("aria-label", lesson.title);
+    btn.innerHTML = `<span class="node-n">${String(i % 5 + 1).padStart(2, "0")}</span>
+      <span class="node-t">${escapeHtml(lesson.title)}</span>`;
+    btn.addEventListener("click", () => startLessonSession(lesson.id));
+    (groupEl || els.path).appendChild(btn);
   });
 
-  // Chapter review node
-  const learnedInChapter = chapterWords().filter(isLearned).length;
+  const learnedInChapter = all.filter(isLearned).length;
   const reviewRow = document.createElement("div");
-  reviewRow.className = "path-row";
-  reviewRow.style.transform = "translateX(0)";
+  reviewRow.className = "review-row";
   reviewRow.innerHTML = `
-    <button class="node review-node" type="button" aria-label="Mixed review">
-      <span class="node-face">🏋️</span>
-    </button>
-    <div class="node-label">Mixed review</div>
-    <div class="node-sub">${learnedInChapter ? "Refresh weak words" : "Learn some words first"}</div>`;
-  reviewRow.querySelector(".node").addEventListener("click", () => startPracticeSession(currentChapter));
+    <button class="review-node" type="button" aria-label="Mixed review">
+      <span class="rn-k">Practice</span>
+      <span class="rn-t">${learnedInChapter ? "Mixed review" : "Learn some words first"}</span>
+    </button>`;
+  reviewRow.querySelector(".review-node").addEventListener("click", () => startPracticeSession(currentChapter));
   els.path.appendChild(reviewRow);
 
   updateHud();
@@ -618,9 +625,9 @@ function buildQuestion(item, mode) {
       return {
         item, mode, kind: "choice",
         title: "Which article?", sub: item.type,
-        promptHtml: `<div class="prompt-bubble center">${escapeHtml(stripArticle(item.term))}</div>`,
+        promptHtml: `<div class="prompt-bubble">${escapeHtml(stripArticle(item.term))}</div>`,
         speak: item.term,
-        answer: article, options: ["der", "die", "das"]
+        answer: article, options: ["der", "die", "das"], colourArticles: true
       };
     }
     mode = "meaning";
@@ -629,7 +636,7 @@ function buildQuestion(item, mode) {
     return {
       item, mode, kind: "input",
       title: "Write it in German", sub: item.type,
-      promptHtml: `<div class="prompt-bubble center">${escapeHtml(item.translation)}</div>`,
+      promptHtml: `<div class="prompt-bubble">${escapeHtml(item.translation)}</div>`,
       speak: null,
       answer: item.term, accepts: [item.term, stripArticle(item.term)]
     };
@@ -652,7 +659,7 @@ function buildQuestion(item, mode) {
     return {
       item, mode, kind: "choice",
       title: "What did you hear?", sub: "Tap the meaning",
-      promptHtml: `<div class="prompt-box"><button class="prompt-speaker big" type="button" data-speak="${escapeAttr(item.term)}">🔊</button><div class="prompt-hint">Listen and choose the meaning</div></div>`,
+      promptHtml: `<div class="prompt-box"><div class="prompt-hint">Listen, then choose the meaning</div><button class="prompt-speaker big" type="button" data-speak="${escapeAttr(item.term)}">Play</button></div>`,
       speak: item.term, autospeak: true,
       answer: item.translation, options: makeOptions(item)
     };
@@ -661,7 +668,7 @@ function buildQuestion(item, mode) {
     return {
       item, mode, kind: "choice",
       title: "Choose the German word", sub: "",
-      promptHtml: `<div class="prompt-bubble center">${escapeHtml(item.translation)}</div>`,
+      promptHtml: `<div class="prompt-bubble">${escapeHtml(item.translation)}</div>`,
       speak: null,
       answer: item.term, options: makeTermOptions(item)
     };
@@ -670,7 +677,7 @@ function buildQuestion(item, mode) {
   return {
     item, mode: "meaning", kind: "choice",
     title: "Choose the meaning", sub: item.form || item.type,
-    promptHtml: `<div class="prompt-box"><button class="prompt-speaker" type="button" data-speak="${escapeAttr(item.term)}">🔊</button><div class="prompt-bubble">${escapeHtml(item.term)}</div></div>`,
+    promptHtml: `<div class="prompt-box"><div class="prompt-bubble" style="border:0;padding:0">${splitArticle(item.term).art ? `<span class="art">${escapeHtml(splitArticle(item.term).art)}</span> ` : ""}${escapeHtml(splitArticle(item.term).rest)}</div><button class="prompt-speaker" type="button" data-speak="${escapeAttr(item.term)}">Play</button></div>`,
     speak: item.term,
     answer: item.translation, options: makeOptions(item)
   };
@@ -783,28 +790,32 @@ function renderStep() {
   const step = session.queue[session.pos];
   updateSessionBar();
 
-  if (step.type === "teach") { renderTeach(step); return; }
+  if (step.type === "teach") { renderTeach(step); swing(els.stage, "a-swap"); return; }
   session.currentQ = buildQuestion(step.item, step.mode);
   renderQuestion(session.currentQ);
+  swing(els.stage, "a-swap");
 }
 
 function renderTeach(step) {
   const item = step.item;
   const examples = learningExamples(item).slice(0, 2);
-  const focus = item.priority === "focus";
+  const g = genderOf(item.term);
+  const parts = splitArticle(item.term);
   els.primaryBtn.textContent = "Continue";
   els.primaryBtn.disabled = false;
+  const badge = g
+    ? `<span class="teach-badge g-${g}">${g}, ${g === "der" ? "masculine" : g === "die" ? "feminine" : "neuter"}</span>`
+    : `<span class="teach-badge">${escapeHtml(item.type)}</span>`;
   els.stage.innerHTML = `
     <div class="teach">
-      <span class="teach-badge ${focus ? "focus" : ""}">${focus ? "Focus word" : "New word"} · ${escapeHtml(item.level)}</span>
-      <div class="teach-term">${escapeHtml(item.term)}</div>
+      ${badge}
+      <div class="teach-term">${parts.art ? `<span class="art">${escapeHtml(parts.art)}</span> ` : ""}${escapeHtml(parts.rest)}</div>
       <div class="teach-trans">${escapeHtml(item.translation)}</div>
-      ${item.form ? `<div class="teach-form">${escapeHtml(item.type)} · ${escapeHtml(item.form)}</div>` : `<div class="teach-form">${escapeHtml(item.type)}</div>`}
-      <button class="teach-speak" type="button" data-speak="${escapeAttr(item.term)}">🔊 Listen</button>
+      <div class="teach-form">${escapeHtml(item.form ? `${item.type}, ${item.form}` : item.type)}</div>
+      <button class="teach-speak" type="button" data-speak="${escapeAttr(item.term)}">Listen</button>
       <div class="teach-examples">
         ${examples.map((ex) => `
           <div class="ex-card" data-speak="${escapeAttr(ex.de)}">
-            <span class="ex-play">🔊</span>
             <div class="ex-de">${escapeHtml(ex.de)}</div>
             <div class="ex-en">${escapeHtml(ex.en)}</div>
           </div>`).join("")}
@@ -819,7 +830,7 @@ function renderQuestion(q) {
   const optionsHtml = q.kind === "choice"
     ? `<div class="options">${q.options.map((opt, i) => `
         <button class="option" type="button" data-opt="${escapeAttr(opt)}">
-          <span class="kbd">${i + 1}</span><span>${escapeHtml(opt)}</span>
+          <span class="kbd">${i + 1}</span><span${q.colourArticles ? ` class="g-${escapeAttr(opt)}"` : ""}>${escapeHtml(opt)}</span>
         </button>`).join("")}</div>`
     : `<input class="answer-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type in German">
        <div class="input-hint"></div>`;
@@ -931,18 +942,20 @@ function showFeedback(correct, q, answer) {
   els.feedbackSheet.hidden = false;
   els.feedbackSheet.removeAttribute("aria-hidden");
   const heartsOut = session.heartsMode && session.hearts <= 0;
-  const headText = correct ? "Nice!" : heartsOut ? "Out of hearts" : "Correct answer:";
+  const headText = correct ? "Correct" : heartsOut ? "Out of lives" : "Answer";
   const detail = correct
-    ? `<b>${escapeHtml(item.term)}</b> · ${escapeHtml(item.translation)}`
-    : `<b>${escapeHtml(q.answer)}</b><div class="fb-ex" style="margin-top:2px">${escapeHtml(item.term)} · ${escapeHtml(item.translation)}</div>`;
+    ? `${escapeHtml(item.term)} · ${escapeHtml(item.translation)}`
+    : `${escapeHtml(q.answer)}`;
+  const under = correct ? "" : `<div class="fb-ex">${escapeHtml(item.term)} · ${escapeHtml(item.translation)}</div>`;
   els.feedbackSheet.innerHTML = `
     <div class="fb-inner">
-      <div class="fb-head"><span class="fb-mark">${correct ? "✓" : "✕"}</span>${headText}</div>
+      <div class="fb-head">${headText}</div>
       <div class="fb-body">${detail}</div>
+      ${under}
       <div class="fb-ex">${escapeHtml(ex.de)}<span class="en"> · ${escapeHtml(ex.en)}</span></div>
-      <button class="fb-speak" type="button" data-speak="${escapeAttr(item.term)}">🔊 Listen</button>
+      <button class="fb-speak" type="button" data-speak="${escapeAttr(item.term)}">Listen</button>
     </div>`;
-  void els.feedbackSheet.offsetHeight; // flush layout so the slide-up transition plays
+  void els.feedbackSheet.offsetHeight;
   els.feedbackSheet.classList.add("show");
 
   els.primaryBtn.textContent = heartsOut ? "See results" : "Continue";
@@ -988,22 +1001,19 @@ function finishSession() {
 function renderResult({ accuracy, crownedUp, goalWasMet }) {
   const crown = session.kind === "lesson" ? lessonState(session.lessonId).crown : 0;
   const crownLine = session.kind === "lesson"
-    ? (crownedUp
-        ? `<div class="crown-pop">👑 Crown ${crown}/5 earned!</div>`
-        : `<div class="crown-pop">👑 Crown ${crown}/5 · already maxed</div>`)
-    : "";
+    ? `<div class="crown-pop">Level ${crown} of 5${crownedUp ? "" : ", already at maximum"}</div>` : "";
   els.stage.innerHTML = `
     <div class="result">
-      <div class="result-emoji">${crownedUp ? "👑" : "🎉"}</div>
-      <h2>${session.kind === "lesson" ? "Lesson complete!" : "Review done!"}</h2>
-      <p class="result-sub">${escapeHtml(session.title)}</p>
+      <div class="result-kicker">${escapeHtml(session.title)}</div>
+      <h2>${accuracy}<span style="font-size:24px;letter-spacing:0">%</span></h2>
+      <p class="result-sub">accuracy</p>
       ${crownLine}
       <div class="result-stats">
-        <div class="result-stat yellow"><div class="rs-label">Total XP</div><div class="rs-value">+${session.xpEarned}</div></div>
-        <div class="result-stat blue"><div class="rs-label">Accuracy</div><div class="rs-value">${accuracy}%</div></div>
-        <div class="result-stat red"><div class="rs-label">Streak</div><div class="rs-value">🔥${state.streak.count}</div></div>
+        <div class="result-stat"><div class="rs-label">XP</div><div class="rs-value">${session.xpEarned}</div></div>
+        <div class="result-stat"><div class="rs-label">Streak</div><div class="rs-value">${state.streak.count}</div></div>
+        <div class="result-stat"><div class="rs-label">Today</div><div class="rs-value">${state.daily.xp}</div></div>
       </div>
-      ${goalWasMet ? `<div class="crown-pop" style="color:var(--orange)">⚡ Daily goal reached!</div>` : `<div class="result-sub">${state.goal - state.daily.xp} XP to today's goal</div>`}
+      <p class="result-sub" style="margin-top:16px">${goalWasMet ? "Daily goal reached." : `${Math.max(0, state.goal - state.daily.xp)} XP to today's goal.`}</p>
     </div>`;
   hideFeedback();
   els.primaryBtn.className = "btn-primary";
@@ -1017,11 +1027,11 @@ function renderFail() {
   const weak = [...new Set(session.queue.filter((s) => session.slotFails[s.slot]).map((s) => s.item))].slice(0, 6);
   els.stage.innerHTML = `
     <div class="result">
-      <div class="result-emoji">💔</div>
-      <h2>Out of hearts</h2>
-      <p class="result-sub">You made it ${Math.round((session.passed.size / session.totalSlots) * 100)}% of the way. These words need another look:</p>
-      <div class="result-stats">
-        ${weak.map((it) => `<div class="result-stat red"><div class="rs-value" style="font-size:1rem">${escapeHtml(it.term)}</div></div>`).join("") || `<p class="result-sub">Give it another go!</p>`}
+      <div class="result-kicker">${escapeHtml(session.title)}</div>
+      <h2>Out of lives</h2>
+      <p class="result-sub">You reached ${Math.round((session.passed.size / session.totalSlots) * 100)}% of the way. These need another look.</p>
+      <div class="wl" style="margin-top:24px">
+        ${weak.map((it) => `<div class="word-item"><div class="word-crowns ${genderOf(it.term) ? "g-" + genderOf(it.term) : ""}">${genderOf(it.term) || ""}</div><div class="word-main"><h3>${escapeHtml(stripArticle(it.term))}</h3><div class="w-trans">${escapeHtml(it.translation)}</div></div><div></div></div>`).join("") || `<p class="result-sub">Give it another go.</p>`}
       </div>
     </div>`;
   hideFeedback();
@@ -1046,54 +1056,17 @@ function endSessionButton() {
 /* ============================================================
    Confetti
    ============================================================ */
-function burstConfetti() {
-  const canvas = els.confetti;
-  const ctx = canvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  ctx.scale(dpr, dpr);
-  const W = window.innerWidth, H = window.innerHeight;
-  const colors = ["#58cc02", "#1cb0f6", "#ffc800", "#ce82ff", "#ff4b4b", "#ff9600"];
-  const parts = Array.from({ length: 130 }, () => ({
-    x: W / 2 + (Math.random() - 0.5) * 120,
-    y: H * 0.32,
-    vx: (Math.random() - 0.5) * 9,
-    vy: Math.random() * -11 - 4,
-    s: 6 + Math.random() * 8,
-    rot: Math.random() * Math.PI,
-    vr: (Math.random() - 0.5) * 0.3,
-    c: colors[Math.floor(Math.random() * colors.length)]
-  }));
-  let frame = 0;
-  function tick() {
-    ctx.clearRect(0, 0, W, H);
-    frame += 1;
-    parts.forEach((p) => {
-      p.vy += 0.32; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.fillStyle = p.c;
-      ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
-      ctx.restore();
-    });
-    if (frame < 150) requestAnimationFrame(tick);
-    else ctx.clearRect(0, 0, W, H);
-  }
-  tick();
-}
+function burstConfetti() { /* removed: decoration has no place in this system */ }
 
 /* ============================================================
    Words / Bank
    ============================================================ */
 function crownGlyphs(mastery) {
-  const filled = Math.min(5, mastery);
-  return `<span class="crn ${filled ? "" : "empty"}">👑</span><span>${filled}/5</span>`;
+  return `${Math.min(5, mastery)}/5`;
 }
 function renderBank() {
   const c = chapterMeta();
-  els.bankMeta.textContent = `Kapitel ${c.number} · ${c.title}`;
+  els.bankMeta.textContent = `Batch ${c.number}, ${c.title}`;
   renderBankChips();
   const query = normalize(els.searchInput.value || "");
   let items = chapterWords();
@@ -1105,25 +1078,22 @@ function renderBank() {
 
   els.wordList.innerHTML = "";
   if (!items.length) {
-    els.wordList.innerHTML = `<p class="bank-meta" style="padding:20px 4px">No words match.</p>`;
+    els.wordList.innerHTML = `<p class="bank-meta" style="padding:20px 0">No words match.</p>`;
     return;
   }
   const frag = document.createDocumentFragment();
   items.forEach((item) => {
     const s = itemState(item.id);
-    const ex = learningExamples(item)[0];
+    const g = genderOf(item.term);
     const div = document.createElement("div");
     div.className = "word-item";
-    const lessonTitle = lessons.find((l) => l.id === item.lesson)?.title || item.lesson;
     div.innerHTML = `
-      <div class="word-crowns">${crownGlyphs(s.mastery)}</div>
+      <div class="word-crowns ${g ? "g-" + g : ""}">${g || ""}</div>
       <div class="word-main">
-        <h3>${escapeHtml(item.term)}</h3>
-        <div class="w-meta">${escapeHtml([lessonTitle, item.priority === "focus" ? "focus" : "", item.type, item.form].filter(Boolean).join(" · "))}</div>
+        <h3>${escapeHtml(stripArticle(item.term))}</h3>
         <div class="w-trans">${escapeHtml(item.translation)}</div>
-        <div class="w-ex">${escapeHtml(ex.de)}<span class="en">${escapeHtml(ex.en)}</span></div>
       </div>
-      <button class="speak" type="button" data-speak="${escapeAttr(item.term)}">🔊</button>`;
+      <button class="speak" type="button" data-speak="${escapeAttr(item.term)}">${crownGlyphs(s.mastery)}</button>`;
     frag.appendChild(div);
   });
   els.wordList.appendChild(frag);
@@ -1161,15 +1131,15 @@ function renderProfileStats() {
   const mastered = vocab.filter((v) => itemState(v.id).mastery >= 5).length;
   const crowns = Object.values(state.lessons).reduce((s, l) => s + (l.crown || 0), 0);
   const tiles = [
-    { ico: "⭐", val: state.xp, lbl: "Total XP" },
-    { ico: "🏅", val: `Lv ${levelFor(state.xp)}`, lbl: "Level" },
-    { ico: "🔥", val: state.streak.count, lbl: "Day streak" },
-    { ico: "👑", val: crowns, lbl: "Crowns" },
-    { ico: "📚", val: `${learned}/${vocab.length}`, lbl: "Words seen" },
-    { ico: "✅", val: mastered, lbl: "Mastered" }
+    { val: state.xp, lbl: "Total XP" },
+    { val: `Lv ${levelFor(state.xp)}`, lbl: "Level" },
+    { val: state.streak.count, lbl: "Day streak" },
+    { val: crowns, lbl: "Levels" },
+    { val: `${learned}/${vocab.length}`, lbl: "Words seen" },
+    { val: mastered, lbl: "Mastered" }
   ];
   els.profileStats.innerHTML = tiles.map((t) => `
-    <div class="stat-tile"><span class="st-ico">${t.ico}</span><div><div class="st-val">${t.val}</div><div class="st-lbl">${t.lbl}</div></div></div>`).join("");
+    <div class="stat-tile"><div class="st-val">${t.val}</div><div class="st-lbl">${t.lbl}</div></div>`).join("");
 }
 function renderGoalOptions() {
   const goals = [10, 20, 30, 50];
@@ -1178,7 +1148,7 @@ function renderGoalOptions() {
     const btn = document.createElement("button");
     btn.className = "pill" + (state.goal === g ? " active" : "");
     btn.type = "button";
-    btn.textContent = `${g} XP`;
+    btn.textContent = String(g);
     btn.addEventListener("click", () => { state.goal = g; saveState(); renderGoalOptions(); updateHud(); });
     els.goalOptions.appendChild(btn);
   });

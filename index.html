@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-  <meta name="theme-color" content="#58cc02">
+  <meta name="theme-color" content="#111111">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Deutsch B1">
@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=swiss1d">
 </head>
 <body data-view="home">
 
@@ -19,20 +19,15 @@
   <header id="hud" class="hud">
     <div class="hud-inner">
       <button id="hudStreak" class="hud-chip" type="button" title="Day streak">
-        <span class="chip-ico">🔥</span><strong id="streakCount">0</strong>
+        <span class="hud-k">Streak</span><span class="hud-v" id="streakCount">0</span>
       </button>
       <button id="hudGoal" class="hud-chip goal" type="button" title="Daily goal">
-        <svg class="goal-ring" viewBox="0 0 36 36" aria-hidden="true">
-          <circle class="goal-track" cx="18" cy="18" r="15.5"></circle>
-          <circle id="goalArc" class="goal-arc" cx="18" cy="18" r="15.5"></circle>
-        </svg>
-        <span class="chip-ico goal-bolt">⚡</span>
-        <strong id="goalText">0/20</strong>
+        <span class="hud-k">Today</span><span class="hud-v" id="goalText">0/20</span>
       </button>
-      <button id="hudHearts" class="hud-chip" type="button" title="Hearts">
-        <span class="chip-ico">❤️</span><strong id="heartCount">5</strong>
+      <button id="hudHearts" class="hud-chip" type="button" title="Lives">
+        <span class="hud-k">Lives</span><span class="hud-v" id="heartCount">5</span>
       </button>
-      <button id="openSettings" class="hud-icon" type="button" aria-label="Settings">⚙️</button>
+      <button id="openSettings" class="hud-icon" type="button" aria-label="Settings">Set</button>
     </div>
   </header>
 
@@ -40,14 +35,12 @@
   <main id="home" class="screen" aria-label="Learning path">
     <nav id="chapterTabs" class="chapter-tabs" aria-label="Chapters"></nav>
     <section class="chapter-hero" id="chapterHero">
-      <div class="hero-crest" id="heroCrest">1</div>
-      <div class="hero-text">
-        <p class="eyebrow">Kapitel <span id="heroNumber">1</span></p>
-        <h1 id="heroTitle">Neue Heimat</h1>
-        <p id="heroSummary" class="hero-summary"></p>
-      </div>
-      <div class="hero-crowns" id="heroCrowns" title="Crowns earned">
-        <span class="crown-ico">👑</span><strong id="heroCrownCount">0</strong>
+      <p class="eyebrow">Batch <span id="heroNumber">1</span></p>
+      <h1 id="heroTitle">Alltag</h1>
+      <p id="heroSummary" class="hero-summary"></p>
+      <div class="hero-meter">
+        <div class="n"><b id="heroLearned">0</b> of <span id="heroTotal">0</span> words</div>
+        <div class="track"><i id="heroTrack" style="width:0"></i></div>
       </div>
     </section>
     <div id="path" class="path" role="list"></div>
@@ -56,10 +49,10 @@
   <!-- ============ SESSION RUNNER ============ -->
   <section id="session" class="screen session" aria-label="Exercise" hidden>
     <div class="session-top">
-      <button id="quitSession" class="quit" type="button" aria-label="Quit session">✕</button>
+      <button id="quitSession" class="quit" type="button" aria-label="Quit session">Quit</button>
       <div class="sbar" role="progressbar" aria-label="Session progress"><span id="sbarFill"></span></div>
-      <div id="sessionHearts" class="session-hearts" aria-label="Hearts left">
-        <span>❤️</span><strong>5</strong>
+      <div id="sessionHearts" class="session-hearts" aria-label="Lives left">
+        <strong>5</strong>
       </div>
     </div>
     <div class="session-body">
@@ -84,10 +77,10 @@
 
   <!-- ============ BOTTOM NAV ============ -->
   <nav id="bottomNav" class="bottom-nav" aria-label="Main navigation">
-    <button class="nav-btn active" data-nav="home" type="button"><span>🏠</span>Learn</button>
-    <button class="nav-btn" data-nav="practice" type="button"><span>🏋️</span>Practice</button>
-    <button class="nav-btn" data-nav="bank" type="button"><span>📖</span>Words</button>
-    <button class="nav-btn" data-nav="settings" type="button"><span>⚙️</span>Profile</button>
+    <button class="nav-btn active" data-nav="home" type="button">Learn</button>
+    <button class="nav-btn" data-nav="practice" type="button">Review</button>
+    <button class="nav-btn" data-nav="bank" type="button">Words</button>
+    <button class="nav-btn" data-nav="settings" type="button">Profile</button>
   </nav>
 
   <!-- ============ SETTINGS MODAL ============ -->
@@ -96,7 +89,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-label="Settings">
       <div class="modal-head">
         <h2>Profile and Settings</h2>
-        <button class="modal-x" type="button" data-close-settings aria-label="Close">✕</button>
+        <button class="modal-x" type="button" data-close-settings aria-label="Close">Close</button>
       </div>
 
       <div class="stat-grid" id="profileStats"></div>
@@ -146,7 +139,7 @@
 
   <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
-  <script src="app.js?v=b1batch1b"></script>
+  <script src="app.js?v=swiss1d"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
