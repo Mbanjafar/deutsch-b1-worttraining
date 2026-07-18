@@ -133,346 +133,16 @@ w("b1-l1-s1", "die Wohnung", "noun", "apartment; flat", "Wir suchen eine möblie
   w("b1-l5-s5", "satt", "adj", "full (not hungry)", "Möchten Sie noch etwas? – Nein danke, ich bin satt.", "", "Do you want anything else? – No thanks, I'm tired.", {"level":"B1","gapTarget":"satt"})
 ];
 
-const exampleTranslations = {
-  "eine Fähigkeit erwerben": "Children acquire analytical skills early.",
-  "die Nachwuchskraft": "Good junior talent is important for companies.",
-  "die Forschungseinrichtung": "The research institution works together with schools.",
-  "der Bedarf an": "The demand for skilled workers is increasing.",
-  "qualifiziert": "The laboratory needs qualified staff.",
-  "ein Studium absolvieren": "She is completing a degree in Berlin.",
-  "schrumpfend": "The shrinking number of applicants is a problem.",
-  "die Weichen stellen": "Early experiences set the course for a career.",
-  "sich voll entfalten": "In a good environment, children can develop fully.",
-  "die Begeisterung wecken": "Experiments spark enthusiasm for physics.",
-  "durchführen": "The class conducts an experiment.",
-  "konzipieren": "The course is designed for B2 learners.",
-  "die Scheu abbauen": "Simple tasks reduce hesitation about grammar.",
-  "das Phänomen": "The phenomenon can be explained easily.",
-  "überlebenswichtig": "Research is vital for some companies.",
-  "die Anleitung": "Please follow the instructions first.",
-  "die Notlüge": "A white lie is often meant to spare someone.",
-  "die Versuchsperson": "The test subject answers questions.",
-  "unsympathisch": "He seems unlikeable when he exaggerates.",
-  "übertreiben": "On a first meeting, one should not exaggerate.",
-  "die Tendenz": "Many people have the tendency to present themselves better.",
-  "sich präsentieren": "In conversation, she presents herself very calmly.",
-  "längerfristig": "Long-term relationships need trust.",
-  "kurzfristig": "Short-term acquaintances often remain superficial.",
-  "die Bekanntschaft": "The acquaintance became a friendship.",
-  "in der Lage sein": "Children are able to understand rules early.",
-  "der Artgenosse": "Animals sometimes warn members of their own species.",
-  "täuschen": "Advertising can deceive customers.",
-  "die Täuschung": "The deception was noticed quickly.",
-  "über etwas verfügen": "The course has many exercises available.",
-  "zu einer Lüge greifen": "Out of fear, he resorts to a lie.",
-  "einem Konflikt aus dem Weg gehen": "She avoids the conflict.",
-  "weit verbreitet": "This opinion is widespread.",
-  "wünschenswert": "Honesty is desirable in conversations.",
-  "ertragen": "Some people find criticism hard to tolerate.",
-  "glaubwürdig": "A credible explanation helps.",
-  "die Spezies": "Humans are a very influential species.",
-  "die Prognose": "At first, the prediction sounds pessimistic.",
-  "ohne jemanden auskommen": "Nature manages without us.",
-  "vermissen": "Hardly anyone would miss the noise.",
-  "sich etwas zurückerobern": "Nature reclaims the city.",
-  "Spuren hinterlassen": "Plastic leaves traces for a long time.",
-  "sichtbar": "The damage remains visible for a long time.",
-  "sich um etwas kümmern": "Nobody takes care of the pumps.",
-  "das Grundwasser": "Groundwater can enter tunnels.",
-  "freie Bahn haben": "Without control, the water has free rein.",
-  "einstürzen": "Old buildings can collapse after years.",
-  "versinken": "Streets sink into the water.",
-  "etwas fest im Griff haben": "Nature has the city firmly under control.",
-  "sich vermehren": "Some animals reproduce quickly.",
-  "vom Aussterben bedroht": "Some species are threatened with extinction.",
-  "zerfallen": "Many structures decay over time.",
-  "geschützt": "Protected buildings remain preserved longer.",
-  "der Kunststoff": "Plastics break down only slowly.",
-  "etwas abbauen": "Bacteria can break down some substances.",
-  "deprimierend": "The idea seems depressing.",
-  "rastlos": "After coffee, I feel restless.",
-  "verschlafen": "On Sunday he sleeps away half the morning.",
-  "entspannen": "During sleep, the muscles relax.",
-  "verarbeiten": "The brain processes new impressions.",
-  "zwischendurch": "In between, I take a short break.",
-  "im Schnitt": "On average, I study for twenty minutes.",
-  "eingerechnet": "Breaks are included in the time.",
-  "schlaflos": "After the exam, she was sleepless.",
-  "durcharbeiten": "Working through the night is not a good idea.",
-  "der Ausweis": "For some people, stress is a sign of achievement.",
-  "die Leistungsfähigkeit": "Sleep increases performance capacity.",
-  "gehoben": "The restaurant has an upscale atmosphere.",
-  "der Beweis": "That is not proof of success.",
-  "der Beleg": "The text provides evidence for the thesis.",
-  "verpennen": "I do not want to sleep through the appointment.",
-  "vernünftig": "After little sleep, I can hardly think sensibly.",
-  "dauerhaft": "Long-lasting stress makes people ill.",
-  "der Schlafmangel": "Lack of sleep weakens concentration.",
-  "die Schlafstörung": "Sleep disorders should be taken seriously.",
-  "sich wälzen": "He tosses and turns in bed at night.",
-  "die Wirkung": "A short nap often has a positive effect.",
-  "das Nickerchen": "After eating, I take a short nap.",
-  "vorbildlicher Eifer": "Exemplary diligence also needs breaks.",
-  "sinken lassen": "She lets her head sink onto her arms.",
-  "die Nachteule": "As a night owl, he studies late in the evening.",
-  "sich trösten mit": "I console myself with a coffee.",
-  "jemandem zufolge": "According to the study, a short break helps.",
-  "hemmen": "Tiredness hinders concentration.",
-  "ausreichen": "Four hours of sleep are rarely sufficient.",
-  "der Nobelpreisträger": "The Nobel Prize winner became world-famous.",
-  "eigensinnig": "Headstrong people often ask more precise questions.",
-  "die Pflichtveranstaltung": "The mandatory class starts at eight.",
-  "grübeln": "He ponders the problem for a long time.",
-  "stets": "She always remains curious.",
-  "maßgeblich": "His idea was decisive for the project.",
-  "das Weltbild": "New discoveries change the worldview.",
-  "die Relativitätstheorie": "The theory of relativity made Einstein famous.",
-  "die Sonnenfinsternis": "A solar eclipse confirmed the theory.",
-  "etwas bestätigen": "The data confirm the assumption.",
-  "auf einen Schlag": "All at once, the news became known.",
-  "die Überzeugung": "He stands by his political convictions.",
-  "sich engagieren für": "Many people are committed to peace.",
-  "der Pazifismus": "Pacifism rejects war as a means.",
-  "die Vortragsreihe": "The lecture series takes place in the USA.",
-  "das Vermögen": "His assets were confiscated.",
-  "konfiszieren": "The authorities confiscate the property.",
-  "der Einsatz": "He wanted to prevent the use of the bomb.",
-  "verhindern": "Good planning prevents mistakes.",
-  "sich gegen etwas wenden": "She opposes violence.",
-  "wahrnehmen": "People perceive smells quickly.",
-  "verströmen": "The pastry gives off a sweet scent.",
-  "lüften": "We have to air out the room.",
-  "duften": "The roses smell pleasant in the garden.",
-  "stinken": "The cheese smells terrible.",
-  "der Wohlgeruch": "The pleasant smell reminds me of vacation.",
-  "der Gestank": "The stench from the kitchen was strong.",
-  "angenehm": "Lavender smells pleasant.",
-  "unangenehm": "Cigarette smoke is unpleasant for many people.",
-  "die Filmsequenz": "The film sequence shows an experiment.",
-  "etwas auslösen": "Scents trigger memories.",
-  "die Erinnerung": "The smell awakens a memory.",
-  "beeinflussen": "Music influences our mood.",
-  "die Kaufentscheidung": "Advertising influences the purchase decision.",
-  "hervorrufen": "Smells can evoke feelings.",
-  "künstlich": "Artificial scents are everywhere.",
-  "umgeben sein von": "We are surrounded by advertising.",
-  "jemanden an der Nase herumführen": "The seller deceives the customers.",
-  "einen guten Riecher haben": "She has a good instinct for trends.",
-  "jemanden nicht riechen können": "He cannot stand his neighbor.",
-  "vor der Nase wegfahren": "The bus left right in front of me.",
-  "seine Nase in etwas stecken": "He pokes his nose into other people's problems.",
-  "auf die Nase fallen": "With this plan, the company failed."
-};
+// Optional hand written overrides, keyed by term.
+// exampleTranslations supplies an English gloss when an entry has no exampleEn.
+// curatedExamples appends extra example sentences beyond the source one.
+// Both are empty: every current entry carries its own Goethe sentence and translation.
+const exampleTranslations = {};
 
-const curatedExamples = {
-  "spontan": [
-    { de: "Wir haben spontan entschieden, am Wochenende ans Meer zu fahren.", en: "We spontaneously decided to go to the sea at the weekend." },
-    { de: "Eine spontane Einladung kann sehr schön sein, wenn man Zeit hat.", en: "A spontaneous invitation can be very nice when you have time." }
-  ],
-  "beschließen": [
-    { de: "Nach langem Nachdenken beschloss er, den Kurs zu wechseln.", en: "After thinking for a long time, he decided to change the course." },
-    { de: "Die Familie beschließt gemeinsam, nach Berlin zu ziehen.", en: "The family decides together to move to Berlin." }
-  ],
-  "etwas erledigen": [
-    { de: "Ich muss heute noch die Anmeldung erledigen.", en: "I still have to take care of the registration today." },
-    { de: "Bevor sie abreist, erledigt sie alle wichtigen Termine.", en: "Before she leaves, she takes care of all important appointments." }
-  ],
-  "und so weiter": [
-    { de: "Für die Bewerbung brauche ich Zeugnisse, Fotos, Formulare und so weiter.", en: "For the application I need certificates, photos, forms, and so on." },
-    { de: "Im neuen Land musste sie eine Wohnung suchen, ein Konto eröffnen und so weiter.", en: "In the new country she had to find an apartment, open an account, and so on." }
-  ],
-  "allerdings": [
-    { de: "Der Job ist interessant, allerdings verdient man am Anfang wenig.", en: "The job is interesting; however, at the beginning you earn little." },
-    { de: "Ich würde gern kommen, allerdings habe ich morgen eine Prüfung.", en: "I would like to come; however, I have an exam tomorrow." }
-  ],
-  "sitzen": [
-    { de: "Während des Gesprächs saß sie sehr ruhig am Tisch.", en: "During the conversation she sat very calmly at the table." },
-    { de: "Im Zug saßen viele Reisende mit großen Koffern.", en: "Many travelers with large suitcases were sitting on the train." }
-  ],
-  "die Beziehung": [
-    { de: "Eine gute Beziehung braucht Vertrauen und Geduld.", en: "A good relationship needs trust and patience." },
-    { de: "Nach dem Umzug wurde ihre Beziehung schwieriger.", en: "After the move their relationship became more difficult." }
-  ],
-  "die Grafikerin": [
-    { de: "Die Grafikerin entwirft Plakate für ein Theater.", en: "The graphic designer designs posters for a theater." },
-    { de: "Als Grafikerin arbeitet sie oft mit Farben und Schriften.", en: "As a graphic designer she often works with colors and fonts." }
-  ],
-  "die Agentur": [
-    { de: "Die Agentur betreut mehrere internationale Kunden.", en: "The agency serves several international clients." },
-    { de: "In einer kleinen Agentur kennt jeder die Projekte der anderen.", en: "In a small agency everyone knows the others' projects." }
-  ],
-  "etwas bereuen": [
-    { de: "Er bereut es nicht, dass er ins Ausland gegangen ist.", en: "He does not regret going abroad." },
-    { de: "Viele bereuen später nur die Chancen, die sie nicht genutzt haben.", en: "Many later regret only the opportunities they did not use." }
-  ],
-  "locker": [
-    { de: "Die Atmosphäre im Büro ist locker, aber trotzdem professionell.", en: "The atmosphere in the office is relaxed but still professional." },
-    { de: "Sie spricht lockerer, wenn sie die Leute schon kennt.", en: "She speaks more casually when she already knows the people." }
-  ],
-  "sehnsüchtig": [
-    { de: "Das Kind wartet sehnsüchtig auf die Ferien.", en: "The child waits longingly for the holidays." },
-    { de: "Nach Monaten im Ausland dachte er sehnsüchtig an seine Familie.", en: "After months abroad, he thought longingly of his family." }
-  ],
-  "das Fingerspitzengefühl": [
-    { de: "Bei schwierigen Kunden braucht man viel Fingerspitzengefühl.", en: "With difficult customers one needs a lot of tact." },
-    { de: "Eine gute Lehrerin erklärt Fehler mit Fingerspitzengefühl.", en: "A good teacher explains mistakes with sensitivity." }
-  ],
-  "die Ausdauer": [
-    { de: "Für einen langen Arbeitstag braucht man Ausdauer.", en: "For a long working day one needs stamina." },
-    { de: "Ausdauer hilft, wenn ein Projekt länger dauert als geplant.", en: "Perseverance helps when a project takes longer than planned." }
-  ],
-  "sich auf etwas einstellen": [
-    { de: "Im neuen Job musste sie sich auf andere Regeln einstellen.", en: "In the new job she had to adjust to different rules." },
-    { de: "Wer umzieht, muss sich auf viele Veränderungen einstellen.", en: "Anyone who moves has to prepare for many changes." }
-  ],
-  "etwas einsehen": [
-    { de: "Nach dem Gespräch sah er seinen Fehler ein.", en: "After the conversation he realized his mistake." },
-    { de: "Sie musste einsehen, dass der Plan zu teuer war.", en: "She had to accept that the plan was too expensive." }
-  ],
-  "mit etwas verbunden sein": [
-    { de: "Der Beruf ist mit viel Verantwortung verbunden.", en: "The profession is connected with a lot of responsibility." },
-    { de: "Ein Umzug ins Ausland ist oft mit Unsicherheit verbunden.", en: "Moving abroad is often connected with uncertainty." }
-  ],
-  "das Geschick": [
-    { de: "Für Reparaturen braucht man handwerkliches Geschick.", en: "For repairs one needs manual skill." },
-    { de: "Sie hat großes Geschick im Umgang mit Menschen.", en: "She has great skill in dealing with people." }
-  ],
-  "die Genauigkeit": [
-    { de: "Bei offiziellen Dokumenten ist Genauigkeit wichtig.", en: "With official documents, accuracy is important." },
-    { de: "Der Techniker arbeitet mit großer Genauigkeit.", en: "The technician works with great precision." }
-  ],
-  "restaurieren": [
-    { de: "Das Museum restauriert alte Gemälde.", en: "The museum restores old paintings." },
-    { de: "Sie restaurieren ein historisches Haus im Zentrum.", en: "They are restoring a historic house in the center." }
-  ],
-  "etwas stimmen": [
-    { de: "Vor dem Konzert muss jemand das Klavier stimmen.", en: "Before the concert someone has to tune the piano." },
-    { de: "Der Musiker stimmt seine Gitarre vor jeder Probe.", en: "The musician tunes his guitar before every rehearsal." }
-  ],
-  "die Leidenschaft": [
-    { de: "Ihre Leidenschaft für Musik begann schon in der Kindheit.", en: "Her passion for music began in childhood." },
-    { de: "Wer seine Leidenschaft zum Beruf macht, arbeitet oft sehr motiviert.", en: "Those who turn their passion into a profession often work very motivated." }
-  ],
-  "etwas umgestalten": [
-    { de: "Sie möchte ihr Zimmer komplett umgestalten.", en: "She wants to completely redesign her room." },
-    { de: "Die Firma gestaltet ihre Webseite neu um.", en: "The company is redesigning its website." }
-  ],
-  "nicht reichen": [
-    { de: "Das Geld reicht nicht für eine größere Wohnung.", en: "The money is not enough for a bigger apartment." },
-    { de: "Gute Ideen reichen nicht, man muss sie auch umsetzen.", en: "Good ideas are not enough; one also has to implement them." }
-  ],
-  "sich die Langeweile vertreiben": [
-    { de: "Auf dem Bahnhof vertrieb er sich die Langeweile mit Musik.", en: "At the station he passed the time with music." },
-    { de: "Viele Kinder vertreiben sich die Langeweile mit Spielen.", en: "Many children relieve boredom with games." }
-  ],
-  "klauen": [
-    { de: "Jemand hat im Supermarkt Schokolade geklaut.", en: "Someone stole chocolate in the supermarket." },
-    { de: "Klauen ist keine Kleinigkeit, auch wenn es nur ein billiger Gegenstand ist.", en: "Stealing is not a small matter, even if it is only a cheap item." }
-  ],
-  "randalieren": [
-    { de: "Nach dem Spiel randalierten einige Fans in der Innenstadt.", en: "After the game some fans vandalized things downtown." },
-    { de: "Wer randaliert, zerstört oft auch das Vertrauen der Nachbarn.", en: "Whoever vandalizes often also destroys the neighbors' trust." }
-  ],
-  "jemanden erwischen": [
-    { de: "Die Lehrerin erwischte ihn beim Abschreiben.", en: "The teacher caught him copying." },
-    { de: "Wenn man beim Lügen erwischt wird, verliert man Vertrauen.", en: "If one is caught lying, one loses trust." }
-  ],
-  "zunächst": [
-    { de: "Zunächst war die Aufgabe leicht, später wurde sie komplizierter.", en: "At first the task was easy; later it became more complicated." },
-    { de: "Ich möchte zunächst die wichtigsten Wörter lernen.", en: "I first want to learn the most important words." }
-  ],
-  "das Hausverbot": [
-    { de: "Nach der Schlägerei bekam er ein Hausverbot im Club.", en: "After the fight he was banned from the club." },
-    { de: "Ein Hausverbot bedeutet, dass man den Ort nicht mehr betreten darf.", en: "A ban from premises means that one may no longer enter the place." }
-  ],
-  "nichts nützen": [
-    { de: "Es nützt nichts, nur über das Problem zu reden.", en: "It is no use only talking about the problem." },
-    { de: "Die Warnung nützte nichts; er kam trotzdem zu spät.", en: "The warning was of no use; he still came late." }
-  ],
-  "jemandem begegnen": [
-    { de: "Auf dem Weg zur Arbeit begegnete sie einer alten Freundin.", en: "On the way to work she met an old friend." },
-    { de: "In einer neuen Stadt begegnet man vielen unbekannten Situationen.", en: "In a new city one encounters many unfamiliar situations." }
-  ],
-  "erneut": [
-    { de: "Nach einer Woche versuchte er es erneut.", en: "After a week he tried it again." },
-    { de: "Die Frage wurde erneut gestellt, weil niemand geantwortet hatte.", en: "The question was asked again because nobody had answered." }
-  ],
-  "tatenlos": [
-    { de: "Sie wollte nicht tatenlos zusehen, wie andere litten.", en: "She did not want to watch passively while others suffered." },
-    { de: "Bei Gewalt darf man nicht tatenlos bleiben.", en: "In the face of violence one must not remain inactive." }
-  ],
-  "jemandem etwas beibringen": [
-    { de: "Meine Kollegin bringt mir die neue Software bei.", en: "My colleague teaches me the new software." },
-    { de: "Geduld ist wichtig, wenn man Kindern etwas beibringt.", en: "Patience is important when teaching children something." }
-  ],
-  "die Selbstbeherrschung": [
-    { de: "In einem Streit braucht man Selbstbeherrschung.", en: "In an argument one needs self-control." },
-    { de: "Sport kann Kindern Selbstbeherrschung beibringen.", en: "Sports can teach children self-control." }
-  ],
-  "die Verantwortung": [
-    { de: "Wer ein Team leitet, trägt Verantwortung.", en: "Whoever leads a team carries responsibility." },
-    { de: "Jugendliche lernen, Verantwortung für ihr Verhalten zu übernehmen.", en: "Young people learn to take responsibility for their behavior." }
-  ],
-  "selbstbewusst": [
-    { de: "Nach dem Kurs sprach sie selbstbewusster Deutsch.", en: "After the course she spoke German more confidently." },
-    { de: "Ein selbstbewusster Mensch kann Kritik besser annehmen.", en: "A self-confident person can accept criticism better." }
-  ],
-  "die Sozialforschung": [
-    { de: "Die Sozialforschung untersucht, wie Menschen zusammenleben.", en: "Social research examines how people live together." },
-    { de: "Er interessiert sich für Sozialforschung und gesellschaftliche Veränderungen.", en: "He is interested in social research and social changes." }
-  ],
-  "der Lebensentwurf": [
-    { de: "Nicht jeder Lebensentwurf passt zu klassischen Familienbildern.", en: "Not every life plan fits traditional family models." },
-    { de: "Viele junge Menschen entwickeln heute eigene Lebensentwürfe.", en: "Many young people today develop their own life plans." }
-  ],
-  "der Lebensverlauf": [
-    { de: "Der Lebensverlauf ist selten genau planbar.", en: "The course of life can rarely be planned exactly." },
-    { de: "Studien vergleichen Lebensverläufe verschiedener Generationen.", en: "Studies compare the life courses of different generations." }
-  ],
-  "die Befragten": [
-    { de: "Die Befragten antworteten anonym auf die Fragen.", en: "The respondents answered the questions anonymously." },
-    { de: "Mehr als die Hälfte der Befragten wünscht sich flexible Arbeitszeiten.", en: "More than half of the respondents want flexible working hours." }
-  ],
-  "bemerkenswert": [
-    { de: "Bemerkenswert ist, dass sich die Meinungen schnell verändert haben.", en: "It is remarkable that the opinions changed quickly." },
-    { de: "Seine Fortschritte nach nur zwei Monaten sind bemerkenswert.", en: "His progress after only two months is remarkable." }
-  ],
-  "der Wertewandel": [
-    { de: "Der Wertewandel zeigt sich besonders in der Arbeitswelt.", en: "The change in values is especially visible in working life." },
-    { de: "Durch den Wertewandel haben viele Menschen andere Erwartungen an Familie.", en: "Because of the change in values many people have different expectations of family." }
-  ],
-  "der Unterhalt": [
-    { de: "Nach der Trennung muss er Unterhalt für die Kinder zahlen.", en: "After the separation he has to pay support for the children." },
-    { de: "Viele Paare teilen sich heute den Unterhalt der Familie.", en: "Many couples today share providing for the family." }
-  ],
-  "eine Familie gründen": [
-    { de: "Sie möchten erst reisen und später eine Familie gründen.", en: "They want to travel first and start a family later." },
-    { de: "Eine Familie zu gründen verändert oft den Alltag.", en: "Starting a family often changes everyday life." }
-  ],
-  "von etwas abweichen": [
-    { de: "Der Plan weicht stark von unserer ursprünglichen Idee ab.", en: "The plan deviates strongly from our original idea." },
-    { de: "Manche Ergebnisse weichen von den Erwartungen ab.", en: "Some results differ from the expectations." }
-  ],
-  "die Vereinbarkeit": [
-    { de: "Die Vereinbarkeit von Studium und Arbeit ist nicht immer einfach.", en: "Combining university studies and work is not always easy." },
-    { de: "Flexible Arbeitszeiten verbessern die Vereinbarkeit von Familie und Beruf.", en: "Flexible working hours improve the ability to combine family and work." }
-  ],
-  "zurückhaltend": [
-    { de: "Im ersten Gespräch war sie noch sehr zurückhaltend.", en: "In the first conversation she was still very reserved." },
-    { de: "Der Chef reagierte zurückhaltend auf den Vorschlag.", en: "The boss reacted cautiously to the proposal." }
-  ],
-  "auf etwas eingehen": [
-    { de: "Die Lehrerin geht auf die Fragen der Klasse ein.", en: "The teacher responds to the class's questions." },
-    { de: "Im Brief geht er auf die Kritik der Leser ein.", en: "In the letter he addresses the readers' criticism." }
-  ],
-  "gefährdet": [
-    { de: "Ohne gute Planung ist das Projekt gefährdet.", en: "Without good planning the project is at risk." },
-    { de: "Ihre Gesundheit war durch den Stress gefährdet.", en: "Her health was endangered by the stress." }
-  ]
-};
+const curatedExamples = {};
 
 /* ============================================================
-   Aspekte B2 · Vokabeln — engine
+   Deutsch B1 Vokabeln, engine
    (dataset above: chapters, lessons, vocab, exampleTranslations, curatedExamples)
    ============================================================ */
 
@@ -491,11 +161,11 @@ function w(lesson, term, type, translation, example, form, exampleEn = "", meta 
     exampleEn,
     // surface form the source marked as the target word, used to place the cloze gap
     gapTarget: meta.gapTarget || "",
-    level: meta.level || "B1.2/B2",
+    level: meta.level || "B1",
     priority: meta.priority || "core"
   };
 }
-function h(lesson, term, type, translation, example, form, exampleEn, level = "B1.2/B2") {
+function h(lesson, term, type, translation, example, form, exampleEn, level = "B1") {
   return w(lesson, term, type, translation, example, form, exampleEn, { priority: "focus", level });
 }
 
@@ -761,7 +431,7 @@ function populateVoices() {
   else { state.speech.voiceURI = ""; }
   els.voiceStatus.textContent = germanVoices.length
     ? `${germanVoices.length} German voice${germanVoices.length === 1 ? "" : "s"} available.`
-    : "No German voice found — the browser will use its closest voice.";
+    : "No German voice found. The browser will use its closest voice.";
 }
 function selectedVoice() {
   return germanVoices.find((v) => v.voiceURI === state.speech.voiceURI)
@@ -1062,7 +732,7 @@ function startLessonSession(lessonId) {
 function startPracticeSession(chapterId) {
   const learned = chapterWords(chapterId).filter(isLearned);
   if (learned.length < 1) {
-    // nothing to practice — gently redirect
+    // nothing to practice, gently redirect
     setView("home");
     return;
   }
@@ -1263,13 +933,13 @@ function showFeedback(correct, q, answer) {
   const heartsOut = session.heartsMode && session.hearts <= 0;
   const headText = correct ? "Nice!" : heartsOut ? "Out of hearts" : "Correct answer:";
   const detail = correct
-    ? `<b>${escapeHtml(item.term)}</b> — ${escapeHtml(item.translation)}`
-    : `<b>${escapeHtml(q.answer)}</b><div class="fb-ex" style="margin-top:2px">${escapeHtml(item.term)} — ${escapeHtml(item.translation)}</div>`;
+    ? `<b>${escapeHtml(item.term)}</b> · ${escapeHtml(item.translation)}`
+    : `<b>${escapeHtml(q.answer)}</b><div class="fb-ex" style="margin-top:2px">${escapeHtml(item.term)} · ${escapeHtml(item.translation)}</div>`;
   els.feedbackSheet.innerHTML = `
     <div class="fb-inner">
       <div class="fb-head"><span class="fb-mark">${correct ? "✓" : "✕"}</span>${headText}</div>
       <div class="fb-body">${detail}</div>
-      <div class="fb-ex">${escapeHtml(ex.de)}<span class="en"> — ${escapeHtml(ex.en)}</span></div>
+      <div class="fb-ex">${escapeHtml(ex.de)}<span class="en"> · ${escapeHtml(ex.en)}</span></div>
       <button class="fb-speak" type="button" data-speak="${escapeAttr(item.term)}">🔊 Listen</button>
     </div>`;
   void els.feedbackSheet.offsetHeight; // flush layout so the slide-up transition plays

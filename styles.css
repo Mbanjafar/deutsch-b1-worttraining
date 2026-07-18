@@ -1,5 +1,5 @@
 /* ============================================================
-   Aspekte B2 · Vokabeln — Duolingo-style word trainer
+   Deutsch B1 Vokabeln, Duolingo-style word trainer
    ============================================================ */
 :root {
   color-scheme: light;
@@ -709,7 +709,7 @@ button:disabled { cursor: default; }
 }
 
 /* ============================================================
-   RESPONSIVE — widen on desktop
+   RESPONSIVE, widen on desktop
    ============================================================ */
 @media (min-width: 720px) {
   :root { --wrap: 600px; }

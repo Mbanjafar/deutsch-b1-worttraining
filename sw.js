@@ -1,4 +1,4 @@
-const CACHE_NAME = "deutsch-b1-worttraining-v1";
+const CACHE_NAME = "deutsch-b1-worttraining-v2";
 const APP_FILES = [
   "./",
   "./index.html",
