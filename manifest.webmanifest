@@ -1,0 +1,18 @@
+{
+  "name": "Deutsch B1 Worttraining",
+  "short_name": "Deutsch B1",
+  "description": "German B1 vocabulary learning and review, based on the Goethe B1 word list.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#58cc02",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
