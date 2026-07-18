@@ -806,20 +806,22 @@ function renderTeach(step) {
   const badge = g
     ? `<span class="teach-badge g-${g}">${g}, ${g === "der" ? "masculine" : g === "die" ? "feminine" : "neuter"}</span>`
     : `<span class="teach-badge">${escapeHtml(item.type)}</span>`;
+  const first = examples[0];
   els.stage.innerHTML = `
     <div class="teach">
       ${badge}
       <div class="teach-term">${parts.art ? `<span class="art">${escapeHtml(parts.art)}</span> ` : ""}${escapeHtml(parts.rest)}</div>
       <div class="teach-trans">${escapeHtml(item.translation)}</div>
       <div class="teach-form">${escapeHtml(item.form ? `${item.type}, ${item.form}` : item.type)}</div>
-      <button class="teach-speak" type="button" data-speak="${escapeAttr(item.term)}">Listen</button>
+      <button class="teach-speak" type="button" data-speak="${escapeAttr(item.term)}">Listen to the word</button>
       <div class="teach-examples">
         ${examples.map((ex) => `
-          <div class="ex-card" data-speak="${escapeAttr(ex.de)}">
+          <div class="ex-card">
             <div class="ex-de">${escapeHtml(ex.de)}</div>
             <div class="ex-en">${escapeHtml(ex.en)}</div>
           </div>`).join("")}
       </div>
+      ${first ? `<button class="teach-speak" type="button" data-speak="${escapeAttr(first.de)}">Listen to the sentence</button>` : ""}
     </div>`;
   if (state.speech.auto) window.setTimeout(() => speak(item.term), 180);
 }
