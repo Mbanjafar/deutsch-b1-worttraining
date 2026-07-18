@@ -1,9 +1,13 @@
-const CACHE_NAME = "deutsch-b1-worttraining-v2";
+// Bump APP_VERSION whenever the app changes. It must match the ?v= value
+// on the app.js script tag in index.html, otherwise the offline cache
+// misses and the app will not load without a network connection.
+const APP_VERSION = "b1batch1b";
+const CACHE_NAME = `deutsch-b1-worttraining-${APP_VERSION}`;
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
+  `./app.js?v=${APP_VERSION}`,
   "./manifest.webmanifest",
   "./icon.svg"
 ];
