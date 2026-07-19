@@ -264,6 +264,47 @@ h1,h2,h3,p{margin:0}
 .option .g-die{color:var(--die);font-weight:600}
 .option .g-das{color:var(--das);font-weight:600}
 
+/* Sentence building. Tiles sit on the 4px rhythm and keep the hairline language. */
+.build-line{
+  display:flex;flex-wrap:wrap;gap:calc(var(--u)*2);
+  min-height:calc(var(--u)*12);padding:calc(var(--u)*3) 0;
+  border-bottom:1px solid var(--ink);margin-bottom:calc(var(--u)*5);
+}
+.build-line.correct{border-bottom-color:var(--ok)}
+.build-line.wrong{border-bottom-color:var(--no)}
+.tile-bank{display:flex;flex-wrap:wrap;gap:calc(var(--u)*2)}
+.tile{
+  padding:calc(var(--u)*2) calc(var(--u)*3);
+  border:1px solid var(--hair);background:var(--paper);color:var(--ink);
+  font-size:15px;line-height:20px;cursor:pointer;
+  transition:transform var(--t-fast) var(--swing),border-color var(--t-fast) linear;
+}
+.tile:active{transform:translateY(1px)}
+.tile.placed{border-color:var(--ink)}
+.tile[hidden]{display:none}
+.tile[disabled]{cursor:default;color:var(--muted)}
+
+/* Match the pairs. Two columns on the same grid as the lesson circles. */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*3)}
+.match-col{display:flex;flex-direction:column;gap:calc(var(--u)*2)}
+.match-cell{
+  padding:calc(var(--u)*3);min-height:calc(var(--u)*12);
+  border:1px solid var(--hair);background:var(--paper);color:var(--ink);
+  font-size:14px;line-height:18px;text-align:left;cursor:pointer;
+  transition:background var(--t-fast) linear,border-color var(--t-fast) linear,opacity var(--t-fast) linear;
+}
+.match-cell.selected{background:var(--wash);border-color:var(--ink)}
+.match-cell.wrong{border-color:var(--no);color:var(--no)}
+.match-cell.done{opacity:.35;border-style:dashed;cursor:default}
+
+/* Skip, for the listening exercises that depend on the device voice. */
+.skip-btn{
+  margin-top:calc(var(--u)*5);padding:calc(var(--u)*2) 0;
+  border:0;background:none;color:var(--muted);cursor:pointer;
+  font-size:13px;line-height:16px;text-decoration:underline;text-underline-offset:3px;
+}
+.skip-btn:hover{color:var(--ink)}
+
 .answer-input{
   width:100%;padding:calc(var(--u)*3) 0;background:none;
   border:0;border-bottom:1px solid var(--hair-2);

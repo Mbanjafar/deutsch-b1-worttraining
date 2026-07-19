@@ -364,6 +364,33 @@ function makeTermOptions(item) {
   return shuffle([item.term, ...pool.slice(0, 3)]);
 }
 
+// The surface form a gap expects: the form the source marked, else the bare term.
+function gapForm(item, ex) {
+  return (ex && ex.gap) || item.gapTarget || stripArticle(item.term);
+}
+// Three wrong German surface forms, drawn from the same lesson first so they stay plausible.
+function makeGapOptions(item, answer) {
+  const out = [];
+  const take = (o) => {
+    const t = gapForm(o, null);
+    if (t && normalize(t) !== normalize(answer) && !out.some((x) => normalize(x) === normalize(t))) out.push(t);
+  };
+  shuffle(vocab.filter((o) => o.id !== item.id && o.lesson === item.lesson)).forEach(take);
+  if (out.length < 3) shuffle(vocab.filter((o) => o.id !== item.id && o.chapter === item.chapter)).forEach(take);
+  return shuffle([answer, ...out.slice(0, 3)]);
+}
+// Distractor tiles for sentence building, single words that do not already appear.
+function makeTileDistractors(item, tokens, count) {
+  const present = new Set(tokens.map((t) => normalize(t)));
+  const out = [];
+  shuffle(vocab.filter((o) => o.id !== item.id && o.chapter === item.chapter)).forEach((o) => {
+    if (out.length >= count) return;
+    const t = stripArticle(o.term).split(" ")[0];
+    if (t && !present.has(normalize(t)) && !out.some((x) => normalize(x) === normalize(t))) out.push(t);
+  });
+  return out;
+}
+
 /* ============================================================
    Progress helpers
    ============================================================ */
@@ -603,22 +630,95 @@ function renderHome() {
 /* ============================================================
    Question building
    ============================================================ */
-function pickModes(item, crown, count) {
+/* The difficulty ladder, easiest first.
+   Rung 0 recognise, 1 produce by choosing, 2 fill a gap, 3 produce from nothing.
+   A session starts the learner further up the ladder as the crown level rises,
+   so repeating a sub-lesson is not the same sub-lesson. */
+function ladderFor(item) {
   const noun = item.type === "noun";
   const canListen = speechAvailable();
-  let bag;
-  if (crown <= 0) bag = ["meaning", "reverse", noun ? "article" : "meaning"];
-  else if (crown === 1) bag = ["meaning", "reverse", "typing", noun ? "article" : "cloze", "cloze"];
-  else if (crown <= 3) bag = ["typing", "cloze", "reverse", noun ? "article" : "typing", canListen ? "listen" : "meaning"];
-  else bag = ["typing", "cloze", canListen ? "listen" : "typing", "typing", noun ? "article" : "cloze"];
-  const picked = shuffle(bag);
+  return [
+    ["meaning", noun ? "article" : "meaning"],
+    ["reverse", canListen ? "listen" : "reverse"],
+    ["bank", noun ? "article" : "bank"],
+    // cloze is the typed gap, the harder sibling of bank, so it sits on the top rung
+    ["typing", "build", "cloze", canListen ? "dictate" : "typing"]
+  ];
+}
+
+function pickModes(item, crown, count) {
+  const ladder = ladderFor(item);
+  const start = Math.max(0, Math.min(ladder.length - 1, Math.floor(crown / 2)));
   const out = [];
-  for (const m of picked) { if (!out.includes(m)) out.push(m); if (out.length >= count) break; }
-  while (out.length < count) out.push(picked[out.length % picked.length]);
+  let rung = start;
+  while (out.length < count) {
+    const bag = ladder[Math.min(rung, ladder.length - 1)];
+    out.push(bag[Math.floor(Math.random() * bag.length)]);
+    rung += 1;
+    if (rung >= ladder.length) rung = start;
+  }
   return out.slice(0, count);
 }
 
-function buildQuestion(item, mode) {
+/* Both listening modes can be skipped, so a session that leans on them is a
+   session the learner can largely skip. Cap them and swap the excess for the
+   nearest equivalent that needs no audio. */
+/* Capped per mode, not as one pool. Listen sits earlier in the ladder, so a
+   single shared budget let it crowd dictation out almost entirely. */
+const AUDIO_CAPS = { listen: 2, dictate: 2 };
+const AUDIO_FALLBACK = { listen: "meaning", dictate: "typing" };
+function capAudio(steps) {
+  const used = { listen: 0, dictate: 0 };
+  return steps.map((step) => {
+    if (!(step.mode in AUDIO_CAPS)) return step;
+    used[step.mode] += 1;
+    if (used[step.mode] <= AUDIO_CAPS[step.mode]) return step;
+    return { ...step, mode: AUDIO_FALLBACK[step.mode] };
+  });
+}
+
+/* Words due for review, weakest and most overdue first, drawn from everything
+   already learned. Falls back to the most recently seen words if too few are due. */
+function refreshPool(excludeLessonId, count) {
+  const now = Date.now();
+  const learned = vocab.filter((v) => v.lesson !== excludeLessonId && isLearned(v));
+  const due = learned
+    .filter((v) => itemState(v.id).due <= now)
+    .sort((a, b) => (itemState(a.id).due - itemState(b.id).due) || (itemState(a.id).mastery - itemState(b.id).mastery));
+  if (due.length >= count) return due.slice(0, count);
+  const rest = learned
+    .filter((v) => !due.includes(v))
+    .sort((a, b) => itemState(b.id).seen - itemState(a.id).seen);
+  return [...due, ...rest].slice(0, count);
+}
+
+/* Spread review steps through the queue instead of stacking them at the end,
+   so new and old words interleave. */
+function interleave(main, extra) {
+  if (!extra.length) return main;
+  const out = [...main];
+  const gap = Math.max(1, Math.floor(main.length / (extra.length + 1)));
+  extra.forEach((step, i) => {
+    const at = Math.min(out.length, gap * (i + 1) + i);
+    out.splice(at, 0, step);
+  });
+  return out;
+}
+
+function buildQuestion(item, mode, step) {
+  // Match covers several words at once, so it reads its set from the step.
+  if (mode === "match") {
+    const group = (step && step.items) || [item];
+    if (group.length < 2) return buildQuestion(item, "meaning");
+    return {
+      item, mode, kind: "match",
+      title: "Tap the pairs", sub: "Match each word to its meaning",
+      promptHtml: "",
+      speak: null,
+      group,
+      answer: null
+    };
+  }
   if (mode === "article" && item.type === "noun") {
     const article = item.term.split(" ")[0];
     if (["der", "die", "das"].includes(article.toLowerCase())) {
@@ -655,12 +755,54 @@ function buildQuestion(item, mode) {
       example: ex
     };
   }
+  // Fill the gap by tapping one of four offered words rather than typing it.
+  if (mode === "bank") {
+    const ex = choosePracticeExample(item);
+    const gap = makeGap(ex.de, item.term, ex.gap);
+    if (!gap) return buildQuestion(item, "reverse");
+    const answer = gapForm(item, ex);
+    return {
+      item, mode, kind: "choice",
+      title: "Fill the gap", sub: ex.en,
+      promptHtml: `<div class="prompt-bubble prompt-cloze">${gap}</div>`,
+      speak: null,
+      answer, options: makeGapOptions(item, answer),
+      example: ex
+    };
+  }
+  // Assemble the German sentence from shuffled tiles.
+  if (mode === "build") {
+    const ex = choosePracticeExample(item);
+    const tokens = String(ex.de).trim().split(/\s+/).filter(Boolean);
+    if (tokens.length < 3 || tokens.length > 12) return buildQuestion(item, "bank");
+    const distractors = makeTileDistractors(item, tokens, tokens.length > 8 ? 2 : 3);
+    return {
+      item, mode, kind: "tiles",
+      title: "Build the sentence", sub: "Tap the words in order",
+      promptHtml: `<div class="prompt-bubble">${escapeHtml(ex.en)}</div>`,
+      speak: ex.de,
+      answer: ex.de, accepts: [ex.de], tiles: shuffle([...tokens, ...distractors]),
+      example: ex
+    };
+  }
+  // Dictation. Skippable, because it depends on the device voice being usable.
+  if (mode === "dictate" && speechAvailable()) {
+    const ex = choosePracticeExample(item);
+    return {
+      item, mode, kind: "input",
+      title: "Type what you hear", sub: "",
+      promptHtml: `<div class="prompt-box"><div class="prompt-hint">Listen, then write the sentence</div><button class="prompt-speaker big" type="button" data-speak="${escapeAttr(ex.de)}">Play</button></div>`,
+      speak: ex.de, autospeak: true, skippable: true,
+      answer: ex.de, accepts: [ex.de],
+      example: ex
+    };
+  }
   if (mode === "listen" && speechAvailable()) {
     return {
       item, mode, kind: "choice",
       title: "What did you hear?", sub: "Tap the meaning",
       promptHtml: `<div class="prompt-box"><div class="prompt-hint">Listen, then choose the meaning</div><button class="prompt-speaker big" type="button" data-speak="${escapeAttr(item.term)}">Play</button></div>`,
-      speak: item.term, autospeak: true,
+      speak: item.term, autospeak: true, skippable: true,
       answer: item.translation, options: makeOptions(item)
     };
   }
@@ -700,39 +842,48 @@ function learningOrder(a, b) {
   return (pa - pb) || (sa.mastery - sb.mastery) || (sa.seen - sb.seen);
 }
 
+/* A sub-lesson session: 17 exercises on its own 4 words, plus 5 refreshers
+   drawn from earlier words, plus a teach card for each word not seen before. */
+const NEW_EXERCISES = 17;
+const REVIEW_EXERCISES = 5;
+
 function startLessonSession(lessonId) {
   const lesson = lessons.find((l) => l.id === lessonId);
   const words = [...lessonWords(lessonId)].sort(learningOrder);
   const crown = lessonState(lessonId).crown;
-  const queue = [];
   let slot = 0;
-  const MAX_NEW = 8;
-  let introduced = 0;
+  const teach = [];
+  const main = [];
 
-  words.forEach((item) => {
-    const fresh = !isLearned(item);
-    if (fresh && introduced < MAX_NEW) {
-      introduced += 1;
-      queue.push({ type: "teach", item, slot: slot++ });
-      pickModes(item, 0, 2).forEach((mode) => queue.push({ type: "q", item, mode, slot: slot++ }));
-    } else if (!fresh) {
-      pickModes(item, crown, crown >= 2 ? 2 : 1).forEach((mode) => queue.push({ type: "q", item, mode, slot: slot++ }));
-    }
+  words.filter((item) => !isLearned(item)).forEach((item) => {
+    teach.push({ type: "teach", item, slot: slot++ });
   });
 
-  // If nothing new and nothing seen (shouldn't happen), still teach first words
-  if (!queue.length && words.length) {
-    words.slice(0, MAX_NEW).forEach((item) => {
-      queue.push({ type: "teach", item, slot: slot++ });
-      pickModes(item, 0, 2).forEach((mode) => queue.push({ type: "q", item, mode, slot: slot++ }));
+  // One match round over the whole set opens the drilling, when there is a set to match.
+  let budget = NEW_EXERCISES;
+  if (words.length >= 2) {
+    main.push({ type: "q", item: words[0], items: words, mode: "match", slot: slot++ });
+    budget -= 1;
+  }
+
+  // Spread the remaining budget evenly over the words, round robin so the
+  // ladder rises across the session rather than word by word.
+  const per = words.length ? Math.floor(budget / words.length) : 0;
+  const extra = words.length ? budget % words.length : 0;
+  const plans = words.map((item, i) => ({ item, modes: pickModes(item, crown, per + (i < extra ? 1 : 0)) }));
+  const rounds = Math.max(0, ...plans.map((p) => p.modes.length));
+  for (let r = 0; r < rounds; r += 1) {
+    shuffle(plans).forEach((p) => {
+      if (p.modes[r]) main.push({ type: "q", item: p.item, mode: p.modes[r], slot: slot++ });
     });
   }
 
-  // Mixed review tail over the words that appeared
-  const appeared = [...new Set(queue.map((s) => s.item))];
-  const tail = shuffle(appeared).map((item) => ({ type: "q", item, mode: pickModes(item, Math.max(1, crown), 1)[0], slot: slot++ }));
-  queue.push(...tail);
+  // Refreshers, due first, interleaved through the new work.
+  const review = refreshPool(lessonId, REVIEW_EXERCISES).map((item) => ({
+    type: "q", item, mode: pickModes(item, Math.max(1, itemState(item.id).mastery), 1)[0], slot: slot++, review: true
+  }));
 
+  const queue = [...teach, ...capAudio(interleave(main, review))];
   launchSession({ kind: "lesson", lessonId, chapterId: lesson.chapter, title: lesson.title, crown, queue });
 }
 
@@ -791,7 +942,7 @@ function renderStep() {
   updateSessionBar();
 
   if (step.type === "teach") { renderTeach(step); swing(els.stage, "a-swap"); return; }
-  session.currentQ = buildQuestion(step.item, step.mode);
+  session.currentQ = buildQuestion(step.item, step.mode, step);
   renderQuestion(session.currentQ);
   swing(els.stage, "a-swap");
 }
@@ -829,18 +980,36 @@ function renderTeach(step) {
 function renderQuestion(q) {
   els.primaryBtn.textContent = "Check";
   els.primaryBtn.disabled = q.kind !== "input" ? true : false;
-  const optionsHtml = q.kind === "choice"
-    ? `<div class="options">${q.options.map((opt, i) => `
+  let bodyHtml;
+  if (q.kind === "choice") {
+    bodyHtml = `<div class="options">${q.options.map((opt, i) => `
         <button class="option" type="button" data-opt="${escapeAttr(opt)}">
           <span class="kbd">${i + 1}</span><span${q.colourArticles ? ` class="g-${escapeAttr(opt)}"` : ""}>${escapeHtml(opt)}</span>
-        </button>`).join("")}</div>`
-    : `<input class="answer-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type in German">
+        </button>`).join("")}</div>`;
+  } else if (q.kind === "tiles") {
+    bodyHtml = `<div class="build-line" aria-live="polite"></div>
+       <div class="tile-bank">${q.tiles.map((t, i) => `
+         <button class="tile" type="button" data-tile="${escapeAttr(t)}" data-i="${i}">${escapeHtml(t)}</button>`).join("")}</div>`;
+  } else if (q.kind === "match") {
+    const left = shuffle(q.group).map((it) => ({ id: it.id, label: it.term }));
+    // Reshuffle until the columns do not line up, otherwise the exercise is free.
+    let pairs = shuffle(q.group);
+    for (let i = 0; i < 8 && pairs.every((it, j) => it.id === left[j].id); i += 1) pairs = shuffle(q.group);
+    const right = pairs.map((it) => ({ id: it.id, label: it.translation }));
+    bodyHtml = `<div class="match-grid">
+        <div class="match-col">${left.map((c) => `<button class="match-cell" type="button" data-side="l" data-id="${escapeAttr(c.id)}">${escapeHtml(c.label)}</button>`).join("")}</div>
+        <div class="match-col">${right.map((c) => `<button class="match-cell" type="button" data-side="r" data-id="${escapeAttr(c.id)}">${escapeHtml(c.label)}</button>`).join("")}</div>
+      </div>`;
+  } else {
+    bodyHtml = `<input class="answer-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type in German">
        <div class="input-hint"></div>`;
+  }
 
   els.stage.innerHTML = `
     <div><div class="q-title">${escapeHtml(q.title)}</div>${q.sub ? `<div class="q-sub">${escapeHtml(q.sub)}</div>` : ""}</div>
     ${q.promptHtml}
-    ${optionsHtml}`;
+    ${bodyHtml}
+    ${q.skippable ? `<button class="skip-btn" type="button">Skip this one</button>` : ""}`;
 
   if (q.kind === "choice") {
     els.stage.querySelectorAll(".option").forEach((btn) => {
@@ -851,13 +1020,110 @@ function renderQuestion(q) {
         els.primaryBtn.disabled = false;
       });
     });
+  } else if (q.kind === "tiles") {
+    wireTiles(q);
+  } else if (q.kind === "match") {
+    wireMatch(q);
+    els.primaryBtn.disabled = true;
   } else {
     const input = els.stage.querySelector(".answer-input");
     input.addEventListener("input", () => { els.primaryBtn.disabled = input.value.trim() === ""; });
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); onPrimary(); } });
     setTimeout(() => input.focus(), 60);
   }
+
+  const skip = els.stage.querySelector(".skip-btn");
+  if (skip) skip.addEventListener("click", () => skipStep());
   if (q.autospeak && state.speech.auto) window.setTimeout(() => speak(q.speak), 220);
+}
+
+/* Tap tiles to build a sentence. Tapping a placed tile sends it back. */
+function wireTiles(q) {
+  const line = els.stage.querySelector(".build-line");
+  const bank = els.stage.querySelector(".tile-bank");
+  const placed = [];
+  const sync = () => {
+    line.innerHTML = placed.map((p, i) => `<button class="tile placed" type="button" data-pos="${i}">${escapeHtml(p.word)}</button>`).join("");
+    line.querySelectorAll(".tile").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const [back] = placed.splice(Number(btn.dataset.pos), 1);
+        const src = bank.querySelector(`.tile[data-i="${back.i}"]`);
+        if (src) src.hidden = false;
+        sync();
+      });
+    });
+    session.selected = placed.map((p) => p.word).join(" ");
+    els.primaryBtn.disabled = placed.length === 0;
+  };
+  bank.querySelectorAll(".tile").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.hidden) return;
+      btn.hidden = true;
+      placed.push({ word: btn.dataset.tile, i: btn.dataset.i });
+      sync();
+    });
+  });
+  sync();
+}
+
+/* Tap one word and one meaning. A correct pair retires both cells. */
+function wireMatch(q) {
+  const cells = [...els.stage.querySelectorAll(".match-cell")];
+  let pick = null;
+  let mistakes = 0;
+  let done = 0;
+  cells.forEach((cell) => {
+    cell.addEventListener("click", () => {
+      if (cell.classList.contains("done") || session.awaiting) return;
+      if (pick && pick.dataset.side === cell.dataset.side) { pick.classList.remove("selected"); pick = null; }
+      if (!pick) { pick = cell; cell.classList.add("selected"); return; }
+      const partner = pick;
+      pick = null;
+      partner.classList.remove("selected");
+      if (partner.dataset.id === cell.dataset.id) {
+        [partner, cell].forEach((c) => { c.classList.remove("wrong"); c.classList.add("done"); c.disabled = true; });
+        done += 1;
+        sndCorrect();
+        if (done === q.group.length) completeMatch(q, mistakes);
+      } else {
+        mistakes += 1;
+        [partner, cell].forEach((c) => {
+          c.classList.add("wrong");
+          window.setTimeout(() => c.classList.remove("wrong"), 420);
+        });
+        sndWrong();
+      }
+    });
+  });
+}
+
+function completeMatch(q, mistakes) {
+  const step = session.queue[session.pos];
+  const correct = mistakes === 0;
+  q.group.forEach((it) => recordAnswer(it, correct));
+  session.answered += 1;
+  session.awaiting = true;
+  if (correct) {
+    session.correct += 1;
+    session.passed.add(step.slot);
+    addXp(2);
+    session.xpEarned += 2;
+  } else {
+    session.slotFails[step.slot] = (session.slotFails[step.slot] || 0) + 1;
+    session.passed.add(step.slot);
+  }
+  els.primaryBtn.disabled = false;
+  showFeedback(correct, { ...q, answer: correct ? "All pairs matched" : `${mistakes} wrong ${mistakes === 1 ? "try" : "tries"}` }, null);
+  updateSessionBar();
+}
+
+/* Skip a listening exercise. Not counted right or wrong, and it does not come back. */
+function skipStep() {
+  const step = session.queue[session.pos];
+  if (!step) return;
+  session.passed.add(step.slot);
+  session.pos += 1;
+  renderStep();
 }
 
 function onPrimary() {
@@ -902,12 +1168,14 @@ function onPrimary() {
   } else {
     session.slotFails[step.slot] = (session.slotFails[step.slot] || 0) + 1;
     if (session.heartsMode) session.hearts = Math.max(0, session.hearts - 1);
-    // requeue this slot (unless it has failed too many times)
-    if (session.slotFails[step.slot] < 3) {
-      session.queue.push({ type: "q", item: q.item, mode: q.mode, slot: step.slot, retry: true });
-    } else {
-      session.passed.add(step.slot); // give it to them to avoid a lock
-    }
+    /* Re-ask the word until it is answered correctly. The retry is placed a few
+       exercises later, not immediately, because answering straight back only
+       tests what is still on screen in short-term memory. After two misses the
+       mode drops to an easier rung so the learner is not stuck on the hard form. */
+    const fails = session.slotFails[step.slot];
+    const mode = fails >= 2 ? pickModes(q.item, 0, 1)[0] : q.mode;
+    const at = Math.min(session.queue.length, session.pos + 2 + Math.floor(Math.random() * 2));
+    session.queue.splice(at, 0, { type: "q", item: q.item, items: step.items, mode, slot: step.slot, retry: true });
     sndWrong();
   }
 
@@ -925,6 +1193,13 @@ function recordSeen(item) {
 }
 
 function lockChoices(q, answer, correct) {
+  if (q.kind === "match") return;
+  if (q.kind === "tiles") {
+    els.stage.querySelectorAll(".tile").forEach((btn) => { btn.disabled = true; });
+    const line = els.stage.querySelector(".build-line");
+    if (line) line.classList.add(correct ? "correct" : "wrong");
+    return;
+  }
   if (q.kind === "choice") {
     els.stage.querySelectorAll(".option").forEach((btn) => {
       btn.disabled = true;
